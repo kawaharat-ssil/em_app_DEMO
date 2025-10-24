@@ -1,1 +1,12 @@
-start
+{
+  "monitor": "running",
+  "scenario": "1",
+  "leds": {
+    "1": false,
+    "3": false,
+    "4": false,
+    "5": false
+  },
+  "alarm_muted": true,
+  "status": "threshold"
+}

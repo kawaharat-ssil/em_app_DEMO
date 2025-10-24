@@ -12,13 +12,11 @@ def judge_status(y_data: pd.Series,
     if threshold_range is not None:
         low, high = threshold_range
         if (y_data < low).any() or (y_data > high).any():
-            print("1111")
             return "threshold"
 
     # 次点：単一閾値で判定（範囲指定がない場合のみ）
     elif threshold is not None:
         if (y_data > threshold).any():
-            print("222")
             return "threshold"
 
     # 傾き判定

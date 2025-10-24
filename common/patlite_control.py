@@ -1,7 +1,7 @@
 import serial
 import time
 import streamlit as st
-
+import config
 
 # ==============================
 # パトライト制御  PHC‑D08 制御関数を定義
@@ -29,7 +29,15 @@ def get_switch_state() -> list[bool]:
     戻り値: 出力8点のON/OFFをboolリストで返す
     """
     try:
-        with serial.Serial(port='COM3', baudrate=9600, timeout=1) as ser:
+        with serial.Serial(
+                port=config.SERIAL_PORT,
+                baudrate=config.BAUDRATE,
+                timeout=config.TIMEOUT
+        ) as ser:
+            ser.write(b'Hello\n')
+            response = ser.readline().decode('utf-8').strip()
+            print(response)
+
             # 状態取得コマンド（5バイト）
             command = bytearray([0x40, 0x3F, 0x3F, 0x47, 0x21])
             ser.write(command)
@@ -86,7 +94,15 @@ def change_output(index: int, active: bool) -> bool:
     active: True=ON, False=OFF
     """
     try:
-        with serial.Serial(port='COM3', baudrate=9600, timeout=1) as ser:
+        with serial.Serial(                 # ser.close() は不要（with 文で自動的に閉じられる）
+                port=config.SERIAL_PORT,
+                baudrate=config.BAUDRATE,
+                timeout=config.TIMEOUT
+        ) as ser:
+            ser.write(b'Hello\n')
+            response = ser.readline().decode('utf-8').strip()
+            print(response)
+
             command = bytearray(7)
             command[0] = 0x40
             command[1] = 0x3F
@@ -145,19 +161,19 @@ def activate_patlight_off(index: int):
     print(f"✅ index={index} 状態変化: {'ON' if after[index] else 'OFF'}（成功: {success})")
 
 
-def set_alarm_led_test(on: bool):
-    # 実機制御コードに置き換え
-    if on:
-        print("🚨 LED ON")
-    else:
-        print("✅ LED OFF")
-
-
-def control_leds(is_monthly: bool):
-    if is_monthly:
-        set_alarm_led(False)
-        set_exhaust_led(False)
-        set_cooling_led(False)
-        set_report_led(True)
-    else:
-        set_report_led(False)
+# def set_alarm_led_test(on: bool):
+#     # 実機制御コードに置き換え
+#     if on:
+#         print("🚨 LED ON")
+#     else:
+#         print("✅ LED OFF")
+#
+#
+# def control_leds(is_monthly: bool):
+#     if is_monthly:
+#         set_alarm_led(False)
+#         set_exhaust_led(False)
+#         set_cooling_led(False)
+#         set_report_led(True)
+#     else:
+#         set_report_led(False)

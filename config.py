@@ -21,12 +21,12 @@ key_config = {
     '2': {
         'start': datetime(2025, 4, 1, 0, 0),
         'end': datetime(2025, 5, 1, 0, 0),
-        'column_index': 4,  # E列（[排気] cna-13 AR3D[m/s^2]）
-        'label': '[排気] cna-13 AR3D[m/s^2]',
-        'type': 'exhaust',  # 排気データ
-        'description': '粗びき時の計測値が徐々に上昇してきている。短期的にポンプ異常が発生する場合のアラームを発報します。',
-        'threshold': 4.2,
-        'range': (2.0, 4.2),
+        'column_index': 5,  # E列（[排気] cna-13 AR3D[m/s^2]）
+        'label': '[冷却] cna-13 AR3D[m/s^2]',
+        'type': 'cooling',  # 排気データ
+        'description': '冷却時の計測値が徐々に上昇してきている。短期的にポンプ異常が発生する場合のアラームを発報します。',
+        'threshold': 5.0,
+        'range': (3.0, 5.0),
         'slope_threshold': 0.01
     },
     '3': {
