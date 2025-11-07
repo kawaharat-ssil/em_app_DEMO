@@ -10,7 +10,7 @@ from common.graph_renderer import make_graph_plotly
 from config import key_config,API_BASE, STYLE_PARAMS_MONTHLY
 
 
-st.set_page_config(page_title="振動デモ", layout="wide")
+st.set_page_config(page_title="設備管理支援装置デモ", layout="wide")
 # st.title("振動データデモ表示")
 
 # 画面切り替え
@@ -85,9 +85,14 @@ if page == "月報":
         key_config["4"]["start"], key_config["4"]["end"],
         key_config["4"]["column_index"], key_config["4"]["label"],
         style_params=STYLE_PARAMS_MONTHLY,
-        threshold=key_config["4"].get("threshold"),
-        threshold_range=key_config["4"].get("range"),
-        slope_threshold=key_config["4"].get("slope_threshold")
+        # threshold=key_config["4"].get("threshold"),
+        # threshold_range=key_config["4"].get("range"),
+        # slope_threshold=key_config["4"].get("slope_threshold")
+
+        use_sigma_band=True,  # ★ 平均±2σを使用
+        sigma_mult=2.0,  # ★ 2σ
+        robust=False  # 外れ値が多い場合は True に
+
     )
     if fig_exhaust and stats_exhaust:
         st.plotly_chart(fig_exhaust, use_container_width=True)
@@ -102,9 +107,14 @@ if page == "月報":
         key_config["5"]["start"], key_config["5"]["end"],
         key_config["5"]["column_index"], key_config["5"]["label"],
         style_params=STYLE_PARAMS_MONTHLY,
-        threshold=key_config["5"].get("threshold"),
-        threshold_range=key_config["5"].get("range"),
-        slope_threshold=key_config["5"].get("slope_threshold")
+        # threshold=key_config["5"].get("threshold"),
+        # threshold_range=key_config["5"].get("range"),
+        # slope_threshold=key_config["5"].get("slope_threshold")
+
+        use_sigma_band=True,  # ★ 平均±2σを使用
+        sigma_mult=2.0,  # ★ 2σ
+        robust=False  # 外れ値が多い場合は True に
+
     )
     if fig_cooling and stats_cooling:
         st.plotly_chart(fig_cooling, use_container_width=True)
@@ -230,7 +240,7 @@ elif page == "グラフ表示":  # ← 遠隔制御モード
 
     print(f"[page] {page}")
     st.subheader("グラフ表示")
-    st_autorefresh(interval=10000, limit=None, key="refresh")
+    st_autorefresh(interval=2000, limit=None, key="refresh")
 
     # --- セッション状態初期化 ---
     if "alarm_muted_key" not in st.session_state:
@@ -261,9 +271,14 @@ elif page == "グラフ表示":  # ← 遠隔制御モード
             cfg["start"], cfg["end"],
             cfg["column_index"], cfg["label"],
             style_params=STYLE_PARAMS_MONTHLY,
-            threshold=cfg.get("threshold"),
-            threshold_range=cfg.get("range"),
-            slope_threshold=cfg.get("slope_threshold")
+            # threshold=cfg.get("threshold"),
+            # threshold_range=cfg.get("range"),
+            # slope_threshold=cfg.get("slope_threshold")
+
+            use_sigma_band=True,  # ★ 平均±2σを使用
+            sigma_mult=2.0,  # ★ 2σ
+            robust=False  # 外れ値が多い場合は True に
+
         )
         days_left = stats.get("予測残り日数（日）")
 
@@ -297,18 +312,18 @@ elif page == "グラフ表示":  # ← 遠隔制御モード
                 justify-content:center;
                 text-align:center;
                 border:1px solid #ffeeba;">
-        <p style="font-size:32px; font-weight:bold; margin:0; color:#856404;">⚠️ 振動警報️ ⚠️</p>
+        <p style="font-size:32px; font-weight:bold; margin:0; color:#856404;">⚠️ 要点検️ ⚠️</p>
         <p style="font-size:26px; margin:0; color:#856404;">振動が増加傾向にあります。</p>
         <p style="font-size:26px; margin:0; color:#856404;text-align:center;">{days_left}日程で基準値を超える見込みです。数日中に点検してください。</p>
         </div>
         """
         # 警告メッセージ表示
-        if status == "threshold":
+        if status == "threshold_exceedance":
             if cfg["type"] == "exhaust":
                 msg_area.markdown(EXHAUST_ALERT_HTML, unsafe_allow_html=True)
             elif cfg["type"] == "cooling":
                 msg_area.markdown(COOLING_ALERT_HTML, unsafe_allow_html=True)
-        elif status == "slope":
+        elif status == "slope_violation":
             msg_area.markdown(SLOPE_ALERT_HTML.format(days_left=days_left), unsafe_allow_html=True)
         else:
             msg_area.info("異常なし")

@@ -130,7 +130,7 @@ def get_alarm_muted():
 def set_monthly_mode():
     state = load_state()
     state["monitor"] = "stopped"  # ← monitorを停止
-    state["leds"] = {"1": False, "3": False, "4": False, "5": True}  # ← LED状態を固定
+    state["leds"] = {"1": True, "3": False, "4": False, "5": True}  # ← LED状態を固定
     state["alarm_muted"] = False  # ← 消灯保持はOFF
     save_state(state)
     return {"status": "monthly mode set", "state": state}

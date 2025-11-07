@@ -5,14 +5,14 @@ import json
 
 from config import key_config, API_BASE
 from common.utils import load_timeseries_data
-from common.judge import judge_status, judge_slope_least_squares
-from common.patlite_control import change_output,set_exhaust_led,set_cooling_led,set_alarm_led
+from common.judge import judge_status, judge_slope_least_squares, judge_slope_linregress
+from common.patlite_control import change_output,set_exhaust_led,set_cooling_led, set_alarm_led
 from common.notify_email import notify_email
 from threading import Event
 
 stop_event = Event()
 STATE_FILE = "monitor_control.txt"
-last_notified = False
+last_notified = "normal"
 
 
 def main():
@@ -50,6 +50,7 @@ def main():
             end = cfg["end"]
             df_period = df[(df["Timestamp"] >= start) & (df["Timestamp"] <= end)].copy()
             y_data = df_period[col].dropna()
+            x_time = df_period.loc[y_data.index, "Timestamp"]
 
             print("[monitor] y_data max =", y_data.max())
             # print(f"[monitor] y_data count = {len(y_data)}")
@@ -59,7 +60,9 @@ def main():
                 continue
 
             # 傾き判定（最小二乗法）
-            slope_alert = judge_slope_least_squares(y_data, cfg.get("slope_threshold", 0.01))
+            #slope_alert = judge_slope_least_squares(y_data, cfg.get("slope_threshold", 0.01))
+            slope_alert, days_remaining, slope, intercept = judge_slope_linregress(x_time, y_data, cfg.get("slope_threshold"),cfg.get("threshold"))
+
 
             # 総合判定
             status = judge_status(
@@ -76,7 +79,7 @@ def main():
 
             # 異常判定による警告LED制御（消灯保持対応）
             # --- LED制御 ---
-            if status == "threshold" and not alarm_muted:
+            if status == "threshold_exceedance" and not alarm_muted:
                 set_alarm_led(True)
                 if cfg.get("type") == "exhaust":
                     set_exhaust_led(True)
@@ -85,30 +88,38 @@ def main():
                     set_exhaust_led(False)
                     set_cooling_led(True)
 
-                if not last_notified:
+                if not last_notified=="threshold_exceedance":
                     notify_email(
-                        to_addr="kawaharat@ssil.co.jp",
-                        subject="🚨 警報通知",
-                        body="パトライトが点灯しました。状況を確認してください。"
+                        to_addr="kawaharat@ssil.co.jp, tomoyaremix@gmail.com",
+                        subject="🚨 不適切運転警報 🚨",
+                        body="ポンプの過負荷が発生しています。運転条件、炉の異常等を点検してください。"
                     )
                     print("[monitor] 警報メール送信")
-                    last_notified = True
+                    last_notified = "threshold_exceedance"
 
-            elif slope_alert:
-                set_alarm_led(False)  # slope_alert の場合は警告LEDは使わない想定
+            elif status == "slope_violation":
+                set_alarm_led(True)  # slope_alert の場合は警告LEDは使わない想定
                 if cfg.get("type") == "exhaust":
                     set_exhaust_led(True)
                     set_cooling_led(False)
                 elif cfg.get("type") == "cooling":
                     set_exhaust_led(False)
                     set_cooling_led(True)
+                if not last_notified=="slope_violation":
+                    notify_email(
+                        to_addr="kawaharat@ssil.co.jp, tomoyaremix@gmail.com",
+                        subject="⚠️ 要点検 ⚠️",
+                        body=f"ポンプの振動が増加傾向にあります。 あと {days_remaining:.1f} 日で閾値に到達すると予測されます。数日中に点検してください。"
+                    )
+                    print("[monitor] 要点検メール送信")
+                    last_notified = "slope_violation"
 
             else:
                 # --- 異常なしの場合は全消灯 ---
                 set_alarm_led(False)
                 set_exhaust_led(False)
                 set_cooling_led(False)
-                last_notified = False
+                last_notified = "normal"
 
             # 6. FastAPIに状態を送信
             try:
@@ -122,7 +133,7 @@ def main():
             print(f"[monitor] Error: {e}")
             traceback.print_exc()
 
-        time.sleep(2)
+        time.sleep(1)
 
 
 def load_state():
@@ -136,7 +147,6 @@ def load_state():
 def check_control_command():
     try:
         state = load_state()
-
 
         # 監視状態
         if state.get("monitor") == "stopped":

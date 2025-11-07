@@ -7,6 +7,6 @@
     "4": false,
     "5": false
   },
-  "alarm_muted": true,
-  "status": "threshold"
+  "alarm_muted": false,
+  "status": "threshold_exceedance"
 }
